@@ -3,7 +3,7 @@ package com.salesmanager.model;
 import java.math.BigDecimal;
 import java.util.Objects;
 
-public class OrderDetail {
+public class OrderDetail extends BaseEntity {
     private Long id;
     private Long orderId;
     private Long productId;
