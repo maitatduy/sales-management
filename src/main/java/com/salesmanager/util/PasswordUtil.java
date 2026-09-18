@@ -2,29 +2,75 @@ package com.salesmanager.util;
 
 import com.salesmanager.exception.AppException;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Base64;
 
 public final class PasswordUtil {
+    private static final String ALGORITHM = "PBKDF2WithHmacSHA256";
+    private static final int ITERATIONS = 120_000;
+    private static final int KEY_LENGTH_BITS = 256;
+    private static final int SALT_LENGTH_BYTES = 16;
+    private static final SecureRandom RANDOM = new SecureRandom();
+
     private PasswordUtil() {
     }
 
     public static String hash(String rawPassword) {
+        byte[] salt = new byte[SALT_LENGTH_BYTES];
+        RANDOM.nextBytes(salt);
+        byte[] hash = pbkdf2(rawPassword.toCharArray(), salt, ITERATIONS, KEY_LENGTH_BITS);
+        return ITERATIONS + ":"
+                + Base64.getEncoder().encodeToString(salt) + ":"
+                + Base64.getEncoder().encodeToString(hash);
+    }
+
+    public static boolean matches(String rawPassword, String stored) {
+        if (stored == null) {
+            return false;
+        }
+        String[] parts = stored.split(":");
+        if (parts.length != 3) {
+            return false;
+        }
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hashBytes = digest.digest(rawPassword.getBytes(StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder();
-            for (byte b : hashBytes) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
-        } catch (NoSuchAlgorithmException e) {
-            throw new AppException("Không thể hash mật khẩu", e);
+            int iterations = Integer.parseInt(parts[0]);
+            byte[] salt = Base64.getDecoder().decode(parts[1]);
+            byte[] expectedHash = Base64.getDecoder().decode(parts[2]);
+            byte[] actualHash = pbkdf2(rawPassword.toCharArray(), salt, iterations, expectedHash.length * 8);
+            return constantTimeEquals(expectedHash, actualHash);
+        } catch (IllegalArgumentException e) {
+            return false;
         }
     }
 
-    public static boolean matches(String rawPassword, String hashedPassword) {
-        return hash(rawPassword).equals(hashedPassword);
+    private static byte[] pbkdf2(char[] password, byte[] salt, int iterations, int keyLengthBits) {
+        try {
+            PBEKeySpec spec = new PBEKeySpec(password, salt, iterations, keyLengthBits);
+            SecretKeyFactory factory = SecretKeyFactory.getInstance(ALGORITHM);
+            return factory.generateSecret(spec).getEncoded();
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new AppException("Không thể hash mật khẩu", e);
+        } finally {
+            spec_clear(password);
+        }
+    }
+
+    private static void spec_clear(char[] password) {
+        java.util.Arrays.fill(password, '\0');
+    }
+
+    private static boolean constantTimeEquals(byte[] a, byte[] b) {
+        if (a.length != b.length) {
+            return false;
+        }
+        int result = 0;
+        for (int i = 0; i < a.length; i++) {
+            result |= a[i] ^ b[i];
+        }
+        return result == 0;
     }
 }
