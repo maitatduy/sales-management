@@ -7,6 +7,7 @@ import com.salesmanager.model.User;
 import com.salesmanager.util.DBConnection;
 
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 public class UserDaoImpl implements UserDao {
@@ -31,7 +32,11 @@ public class UserDaoImpl implements UserDao {
 
     @Override
     public User save(User user) {
-        String sql = "INSERT INTO users (username, password_hash, full_name, role, active) VALUES (?, ?, ?, ?, ?)";
+        if (user.getCreatedAt() == null) {
+            user.setCreatedAt(LocalDateTime.now());
+        }
+        String sql = "INSERT INTO users (username, password_hash, full_name, role, active, created_by, created_at) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, user.getUsername());
@@ -39,6 +44,8 @@ public class UserDaoImpl implements UserDao {
             ps.setString(3, user.getFullName());
             ps.setString(4, user.getRole().name());
             ps.setBoolean(5, user.isActive());
+            ps.setString(6, user.getCreatedBy());
+            ps.setTimestamp(7, Timestamp.valueOf(user.getCreatedAt()));
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) {
@@ -69,9 +76,15 @@ public class UserDaoImpl implements UserDao {
         user.setFullName(rs.getString("full_name"));
         user.setRole(Role.valueOf(rs.getString("role")));
         user.setActive(rs.getBoolean("active"));
+        user.setCreatedBy(rs.getString("created_by"));
         Timestamp createdAt = rs.getTimestamp("created_at");
         if (createdAt != null) {
             user.setCreatedAt(createdAt.toLocalDateTime());
+        }
+        user.setUpdatedBy(rs.getString("updated_by"));
+        Timestamp updatedAt = rs.getTimestamp("updated_at");
+        if (updatedAt != null) {
+            user.setUpdatedAt(updatedAt.toLocalDateTime());
         }
         return user;
     }
