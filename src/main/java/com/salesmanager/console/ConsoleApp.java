@@ -1,6 +1,7 @@
 package com.salesmanager.console;
 
 import com.salesmanager.exception.AppException;
+import com.salesmanager.exception.DatabaseException;
 import com.salesmanager.model.User;
 import com.salesmanager.service.AuthService;
 import com.salesmanager.util.InputHelper;
@@ -25,16 +26,20 @@ public class ConsoleApp {
     }
 
     private User login() {
-        String username = input.readLine("Tên đăng nhập (Để trống nếu muốn thoát): ");
-        if (username.isBlank()) {
-            return null;
-        }
-        String password = input.readLine("Mật khẩu: ");
-        try {
-            return authService.login(username, password);
-        } catch (AppException e) {
-            System.out.println("Lỗi: " + e.getMessage());
-            return login();
+        while (true) {
+            String username = input.readLine("Tên đăng nhập (Để trống nếu muốn thoát): ");
+            if (username.isBlank()) {
+                return null;
+            }
+            String password = input.readLine("Mật khẩu: ");
+            try {
+                return authService.login(username, password);
+            } catch (DatabaseException e) {
+                System.out.println("Lỗi hệ thống, vui lòng thử lại sau: " + e.getMessage());
+                return null;
+            } catch (AppException e) {
+                System.out.println("Lỗi: " + e.getMessage());
+            }
         }
     }
 }
