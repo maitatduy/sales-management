@@ -46,9 +46,19 @@ public class UserDaoImpl implements UserDao {
                 }
             }
             return user;
+        } catch (SQLIntegrityConstraintViolationException e) {
+            throw new DatabaseException("Tên đăng nhập đã tồn tại.", e);
         } catch (SQLException e) {
-            throw new DatabaseException("Lỗi khi tạo người dùng: Tên đăng nhập có thể đã tồn tại.", e);
+            if (isIntegrityConstraintViolation(e)) {
+                throw new DatabaseException("Tên đăng nhập đã tồn tại.", e);
+            }
+            throw new DatabaseException("Lỗi khi tạo người dùng.", e);
         }
+    }
+
+    private boolean isIntegrityConstraintViolation(SQLException e) {
+        String state = e.getSQLState();
+        return state != null && state.startsWith("23");
     }
 
     private User mapRow(ResultSet rs) throws SQLException {
@@ -59,6 +69,10 @@ public class UserDaoImpl implements UserDao {
         user.setFullName(rs.getString("full_name"));
         user.setRole(Role.valueOf(rs.getString("role")));
         user.setActive(rs.getBoolean("active"));
+        Timestamp createdAt = rs.getTimestamp("created_at");
+        if (createdAt != null) {
+            user.setCreatedAt(createdAt.toLocalDateTime());
+        }
         return user;
     }
 }
