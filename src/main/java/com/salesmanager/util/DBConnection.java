@@ -21,6 +21,11 @@ public final class DBConnection {
         this.url = props.getProperty("db.url");
         this.username = props.getProperty("db.username");
         this.password = props.getProperty("db.password");
+
+        if (url == null || url.isBlank()) {
+            throw new DatabaseException(
+                    "Thiếu cấu hình db.url. Kiểm tra file db.properties trong classpath.", null);
+        }
     }
 
     public static DBConnection getInstance() {
