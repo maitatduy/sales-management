@@ -5,10 +5,11 @@ import com.salesmanager.enums.OrderStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public class Order {
+public class Order extends BaseEntity {
     private Long id;
     private Long customerId;
     private String customerName;
@@ -34,6 +35,7 @@ public class Order {
 
     public void addDetail(OrderDetail detail) {
         this.details.add(detail);
+        recalculateTotal();
     }
 
     public Long getId() {
@@ -101,11 +103,12 @@ public class Order {
     }
 
     public List<OrderDetail> getDetails() {
-        return details;
+        return Collections.unmodifiableList(details);
     }
 
     public void setDetails(List<OrderDetail> details) {
-        this.details = details;
+        this.details = new ArrayList<>(details);
+        recalculateTotal();
     }
 
     @Override
@@ -165,7 +168,7 @@ public class Order {
         }
 
         public Builder details(List<OrderDetail> details) {
-            order.details = details;
+            order.details = new ArrayList<>(details);
             return this;
         }
 

@@ -5,17 +5,13 @@ import com.salesmanager.enums.Role;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-/**
- * Entity đại diện cho người dùng hệ thống (Admin / Staff).
- */
-public class User {
+public class User extends BaseEntity {
     private Long id;
     private String username;
     private String passwordHash;
     private String fullName;
     private Role role;
     private boolean active;
-    private LocalDateTime createdAt;
 
     public User() {
     }
@@ -27,7 +23,7 @@ public class User {
         this.fullName = fullName;
         this.role = role;
         this.active = active;
-        this.createdAt = createdAt;
+        this.setCreatedAt(createdAt);
     }
 
     public Long getId() {
@@ -78,14 +74,6 @@ public class User {
         this.active = active;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public boolean isAdmin() {
         return this.role == Role.ADMIN;
     }
@@ -93,8 +81,7 @@ public class User {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof User)) return false;
-        User user = (User) o;
+        if (!(o instanceof User user)) return false;
         return Objects.equals(id, user.id);
     }
 

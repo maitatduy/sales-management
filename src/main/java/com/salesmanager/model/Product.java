@@ -4,14 +4,13 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-public class Product {
+public class Product extends BaseEntity {
     private Long id;
     private String name;
     private Long categoryId;
     private String categoryName;
     private BigDecimal price;
     private int quantity;
-    private LocalDateTime createdAt;
 
     private Product() {
     }
@@ -44,10 +43,6 @@ public class Product {
         return quantity;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
     public void setId(Long id) {
         this.id = id;
     }
@@ -70,10 +65,6 @@ public class Product {
 
     public void setQuantity(int quantity) {
         this.quantity = quantity;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
     }
 
     public void decreaseStock(int amount) {
@@ -134,7 +125,7 @@ public class Product {
         }
 
         public Builder createdAt(LocalDateTime createdAt) {
-            product.createdAt = createdAt;
+            product.setCreatedAt(createdAt);
             return this;
         }
 
